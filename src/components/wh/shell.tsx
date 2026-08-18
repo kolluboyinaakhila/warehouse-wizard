@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Clock,
   PackageCheck,
+  RotateCcw,
   Warehouse,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -23,7 +24,7 @@ const NAV = [
 ] as const;
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { state, tick } = useWarehouse();
+  const { state, tick, reset } = useWarehouse();
   const openExc = state.exceptions.filter((e) => e.status === "open").length;
   const clock = new Date(state.clock).toISOString().slice(11, 16);
 
@@ -62,8 +63,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <span className="num flex items-center gap-1.5 rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground">
               <Clock className="size-3.5" /> {clock} UTC · shift A
             </span>
-            <Button size="sm" variant="secondary" onClick={() => tick(2)}>
+            <Button size="sm" variant="secondary" onClick={() => tick(2)} title="Advance simulated shift clock">
               +2h
+            </Button>
+            <Button size="sm" variant="ghost" onClick={reset} title="Reset the simulated shift">
+              <RotateCcw className="size-3.5" />
             </Button>
           </div>
         </div>
