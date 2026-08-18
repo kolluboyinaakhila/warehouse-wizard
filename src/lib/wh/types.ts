@@ -34,7 +34,7 @@ export type Product = {
   dailyVelocity: number;
   unitCost: number;
   inbound: number;
-  inboundEta?: string;
+  inboundEta?: string | undefined;
 };
 
 export type OrderLine = {
@@ -58,9 +58,9 @@ export type Order = {
   lines: OrderLine[];
   backordered: { sku: string; qty: number }[];
   notes: string[];
-  splitFrom?: string;
+  splitFrom?: string | undefined;
   stageEnteredAt: string;
-  assignedTo?: string;
+  assignedTo?: string | undefined;
 };
 
 export type ExceptionKind = "damaged" | "missing" | "shortfall" | "qc_fail";
@@ -68,14 +68,14 @@ export type ExceptionKind = "damaged" | "missing" | "shortfall" | "qc_fail";
 export type WhException = {
   id: string;
   kind: ExceptionKind;
-  orderId?: string;
+  orderId?: string | undefined;
   sku: string;
   qty: number;
   detectedAt: string;
   status: "open" | "resolved";
   detail: string;
-  resolution?: string;
-  options: { id: string; label: string; detail: string; recommended?: boolean }[];
+  resolution?: string | undefined;
+  options: { id: string; label: string; detail: string; recommended?: boolean | undefined }[];
 };
 
 export type LogEntry = {
@@ -84,7 +84,7 @@ export type LogEntry = {
   kind: "decision" | "event" | "exception";
   title: string;
   detail: string;
-  orderId?: string;
+  orderId?: string | undefined;
 };
 
 export type WhState = {
