@@ -2,8 +2,10 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
+  useRef,
   type ReactNode,
 } from "react";
 import { initialState } from "./data";
@@ -27,7 +29,9 @@ type Action =
   | { type: "receive_stock"; sku: string; qty: number }
   | { type: "create_order"; order: Order }
   | { type: "expedite"; orderId: string }
-  | { type: "tick"; hours: number };
+  | { type: "tick"; hours: number }
+  | { type: "restore"; state: WhState }
+  | { type: "reset" };
 
 let seq = 1;
 const nid = (p: string) => `${p}-${seq++}`;
@@ -140,8 +144,16 @@ function applyAllocation(state: WhState, orderId?: string): WhState {
   return log(next, "decision", "Allocation engine ran", plan.summary);
 }
 
+const KEY = "nexus-wms-state-v1";
+
 function reducer(state: WhState, action: Action): WhState {
   switch (action.type) {
+    case "restore":
+      return action.state;
+
+    case "reset":
+      return initialState();
+
     case "run_allocation":
       return applyAllocation(state, action.orderId);
 
@@ -322,12 +334,34 @@ type Api = {
   receiveStock: (sku: string, qty: number) => void;
   createOrder: (o: Order) => void;
   tick: (hours: number) => void;
+  reset: () => void;
 };
 
 const Ctx = createContext<Api | null>(null);
 
 export function WarehouseProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
+  const hydrated = useRef(false);
+
+  // Persist the simulated floor state so a refresh does not lose the shift.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(KEY);
+      if (raw) dispatch({ type: "restore", state: JSON.parse(raw) as WhState });
+    } catch {
+      /* ignore corrupt cache */
+    }
+    hydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      /* ignore quota */
+    }
+  }, [state]);
 
   const api = useMemo<Api>(
     () => ({
@@ -341,6 +375,14 @@ export function WarehouseProvider({ children }: { children: ReactNode }) {
       receiveStock: (sku, qty) => dispatch({ type: "receive_stock", sku, qty }),
       createOrder: (o) => dispatch({ type: "create_order", order: o }),
       tick: (hours) => dispatch({ type: "tick", hours }),
+      reset: () => {
+        try {
+          window.localStorage.removeItem(KEY);
+        } catch {
+          /* ignore */
+        }
+        dispatch({ type: "reset" });
+      },
     }),
     [state],
   );
