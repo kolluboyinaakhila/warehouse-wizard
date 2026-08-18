@@ -247,7 +247,11 @@ export function pickRoute(order: Order, products: Product[]) {
 
 /** Batch pickers: group same-zone orders so one walk serves several orders. */
 export function pickWaves(state: WhState) {
-  const ready = state.orders.filter((o) => o.status === "allocated" || o.status === "picking");
+  const ready = state.orders.filter(
+    (o) =>
+      (o.status === "allocated" || o.status === "picking") &&
+      o.lines.some((l) => l.allocated > l.picked),
+  );
   const byZone = new Map<string, { zone: string; orders: Order[]; units: number }>();
   ready.forEach((o) => {
     const zones = new Set(
